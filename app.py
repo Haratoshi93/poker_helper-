@@ -127,16 +127,22 @@ if len(hero_cards) == 2:
     def get_preflop_advice(win_rate, num_villains):
         fair_share = 1.0 / (num_villains + 1)
         if win_rate >= fair_share * 1.5:
-            return "[Tier 1] 非常に強い手札です (Premium Hand)"
+            return "success", "Rank S : 非常に有利な手札 (トップクラスの強さ)"
         elif win_rate >= fair_share * 1.1:
-            return "[Tier 2] 平均より強い手札です (Strong Hand)"
+            return "info", "Rank A : 有利な手札 (平均以上のポテンシャル)"
         elif win_rate >= fair_share * 0.8:
-            return "[Tier 3] やや弱めの手札です (Marginal Hand)"
+            return "warning", "Rank B : 注意が必要な手札 (平均を下回っています)"
         else:
-            return "[Tier 4] 弱い手札です (Weak Hand)"
+            return "error", "Rank C : 非常に厳しい手札 (勝つのが難しい強さ)"
 
     with st.container(border=True):
-        st.markdown(f"**Analysis Result**\n\n{get_preflop_advice(win_rate, num_villains)}")
+        st.markdown("**Hand Potential (手札のポテンシャル)**")
+        msg_type, msg_text = get_preflop_advice(win_rate, num_villains)
+        if msg_type == "success": st.success(msg_text)
+        elif msg_type == "info": st.info(msg_text)
+        elif msg_type == "warning": st.warning(msg_text)
+        elif msg_type == "error": st.error(msg_text)
+        
         st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
 
     st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
