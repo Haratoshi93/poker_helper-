@@ -3,19 +3,40 @@ import pandas as pd
 import plotly.express as px
 from poker_calc import calculate_equity, get_hand_type
 
-st.set_page_config(page_title="Poker Helper", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Texas Hold'em Analyzer", layout="centered", initial_sidebar_state="collapsed")
 
+# ゴージャスなUIにするためのカスタムCSS
 st.markdown("""
 <style>
-    .main { background-color: #f8fafc; }
-    [data-testid="stMetricValue"] { font-size: 2.5rem !important; color: #1e3a8a; }
-    h1, h2, h3, h4 { color: #0f172a; }
+    /* 勝率などの数値をより高級感のあるゴールドに */
+    [data-testid="stMetricValue"] { 
+        font-size: 2.8rem !important; 
+        color: #d4af37 !important; 
+        font-family: 'Georgia', serif;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #a0a0a0 !important;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    /* 見出しのデザイン */
+    h1, h2, h3, h4 { 
+        color: #d4af37 !important; 
+        font-family: 'Georgia', serif;
+        border-bottom: 1px solid #333;
+        padding-bottom: 10px;
+    }
+    /* ピルやラジオボタンのレイアウト調整 */
     .stRadio > div { flex-wrap: wrap; }
+    /* 区切り線をさりげなく */
+    hr {
+        border-color: #333 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🃏 Poker Helper")
-st.markdown("初心者のための「参加すべきか？」がすぐ分かるアプリ")
+st.title("Texas Hold'em Analyzer")
+st.markdown("テキサスホールデム専用・勝率＆ポテンシャル解析ツール")
 
 ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 suits = ['s', 'h', 'd', 'c']
@@ -57,115 +78,118 @@ def card_picker(label_prefix, key_prefix):
     return None
 
 # --- 1. 人数設定 ---
-st.markdown("### 👥 1. 対戦相手の人数")
-num_villains = st.slider("あなた以外のプレイヤー数を設定してください", min_value=1, max_value=8, value=1)
+st.markdown("### PLAYER SETTINGS")
+num_villains = st.slider("対戦相手の人数 (Villains)", min_value=1, max_value=8, value=1)
 
 # --- 2. 手札設定 (メイン機能) ---
-st.markdown("### 🎴 2. あなたの手札")
+st.markdown("### HOLE CARDS")
 hero_cards = []
 with st.container(border=True):
+    st.caption("あなたに配られた2枚のカード (Hole Cards)")
     col1, col2 = st.columns(2)
     with col1:
-        hero1 = card_picker("1枚目", "h1")
+        hero1 = card_picker("Card 1", "h1")
         if hero1:
             st.image(get_card_image_url(hero1), width=100)
             hero_cards.append(hero1)
     with col2:
         if hero1:
-            hero2 = card_picker("2枚目", "h2")
+            hero2 = card_picker("Card 2", "h2")
             if hero2:
                 st.image(get_card_image_url(hero2), width=100)
                 hero_cards.append(hero2)
 
 # --- 3. プリフロップ判定（最重要機能） ---
 if len(hero_cards) == 2:
-    st.markdown("---")
-    st.markdown("### 🎯 手札のポテンシャル（強さの目安）")
+    st.markdown("### PREFLOP ANALYSIS")
     
-    with st.spinner('勝率を計算中...'):
+    with st.spinner('Calculating Equity...'):
         win_rate, tie_rate = calculate_equity(hero_cards, [], num_villains, iterations=2000)
 
     def get_preflop_advice(win_rate, num_villains):
         fair_share = 1.0 / (num_villains + 1)
         if win_rate >= fair_share * 1.5:
-            return "🔥 非常に強い手札です (勝率上位クラス)"
+            return "[Tier 1] 非常に強い手札です (Premium Hand)"
         elif win_rate >= fair_share * 1.1:
-            return "👍 平均より強い手札です"
+            return "[Tier 2] 平均より強い手札です (Strong Hand)"
         elif win_rate >= fair_share * 0.8:
-            return "⚠️ やや弱めの手札です (平均を下回っています)"
+            return "[Tier 3] やや弱めの手札です (Marginal Hand)"
         else:
-            return "❄️ 弱い手札です (厳しい戦いが予想されます)"
+            return "[Tier 4] 弱い手札です (Weak Hand)"
 
     with st.container(border=True):
-        st.success(f"**【手札の強さの目安】**\n\n{get_preflop_advice(win_rate, num_villains)}")
+        st.markdown(f"**Analysis Result**\n\n{get_preflop_advice(win_rate, num_villains)}")
         res_col1, res_col2 = st.columns(2)
-        res_col1.metric("現在の勝率", f"{win_rate*100:.1f}%")
-        res_col2.metric("引き分け率", f"{tie_rate*100:.1f}%")
+        res_col1.metric("Win Probability", f"{win_rate*100:.1f}%")
+        res_col2.metric("Tie Probability", f"{tie_rate*100:.1f}%")
 
-    st.button("🔄 カードをリセットして次のゲームへ", on_click=reset_cards, use_container_width=True, type="primary")
+    st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
 
     # --- 4. オプション機能（フロップ以降） ---
-    st.markdown("---")
-    with st.expander("🔍 オプション：フロップ以降の勝率シミュレーション", expanded=False):
-        st.markdown("場に共通カードが出た後の展開を分析したい場合は、こちらに入力してください。")
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander("ADVANCED: Postflop Simulation (フロップ以降の解析)", expanded=False):
+        st.markdown("場の共通カード (Community Cards) を展開して解析します。")
         
         board_cards = []
         with st.container(border=True):
-            st.markdown("**現在のボード**")
+            st.markdown("**COMMUNITY CARDS**")
             b_cols = st.columns(5)
             
-            f1 = card_picker("フロップ 1枚目", "f1")
+            f1 = card_picker("Flop 1", "f1")
             if f1:
                 board_cards.append(f1)
                 b_cols[0].image(get_card_image_url(f1), use_container_width=True)
                 
-                f2 = card_picker("フロップ 2枚目", "f2")
+                f2 = card_picker("Flop 2", "f2")
                 if f2:
                     board_cards.append(f2)
                     b_cols[1].image(get_card_image_url(f2), use_container_width=True)
                     
-                    f3 = card_picker("フロップ 3枚目", "f3")
+                    f3 = card_picker("Flop 3", "f3")
                     if f3:
                         board_cards.append(f3)
                         b_cols[2].image(get_card_image_url(f3), use_container_width=True)
                         
-                        t = card_picker("ターン (4枚目)", "t")
+                        t = card_picker("Turn (4th)", "t")
                         if t:
                             board_cards.append(t)
                             b_cols[3].image(get_card_image_url(t), use_container_width=True)
                             
-                            r = card_picker("リバー (5枚目)", "r")
+                            r = card_picker("River (5th)", "r")
                             if r:
                                 board_cards.append(r)
                                 b_cols[4].image(get_card_image_url(r), use_container_width=True)
         
         if board_cards:
-            st.markdown("#### 分析結果 (フロップ以降)")
-            with st.spinner('最新のボードで計算中...'):
+            st.markdown("#### Postflop Analysis Result")
+            with st.spinner('Simulating...'):
                 wr_board, tr_board = calculate_equity(hero_cards, board_cards, num_villains, iterations=1000)
             
             with st.container(border=True):
                 hand_type = get_hand_type(hero_cards, board_cards)
-                st.info(f"**あなたの現在の役:** {hand_type}")
-                st.metric("現在の勝率", f"{wr_board*100:.1f}%")
+                st.markdown(f"**Current Made Hand:** {hand_type}")
+                st.metric("Current Win Probability", f"{wr_board*100:.1f}%")
                 
-            st.markdown("#### 📈 勝率の推移グラフ")
-            phases = ["プリフロップ", "フロップ", "ターン", "リバー"]
+            st.markdown("#### Equity Chart")
+            phases = ["Preflop", "Flop", "Turn", "River"]
             equity_history = []
             
-            # プリフロップは計算済み
-            equity_history.append({"フェーズ": phases[0], "勝率": win_rate * 100})
+            equity_history.append({"Phase": phases[0], "Equity": win_rate * 100})
             
-            # それ以降の計算
             for i in [3, 4, 5]:
                 if len(board_cards) >= i:
                     current_board = board_cards[:i]
                     wr, _ = calculate_equity(hero_cards, current_board, num_villains, iterations=1000)
-                    equity_history.append({"フェーズ": phases[[3, 4, 5].index(i) + 1], "勝率": wr * 100})
+                    equity_history.append({"Phase": phases[[3, 4, 5].index(i) + 1], "Equity": wr * 100})
 
             if len(equity_history) > 1:
                 df = pd.DataFrame(equity_history)
-                fig = px.line(df, x="フェーズ", y="勝率", markers=True, range_y=[0, 100], template="plotly_white")
-                fig.update_traces(line=dict(color="#2563eb", width=4), marker=dict(size=10, color="#ef4444"), textposition="top center")
-                fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
+                # グラフもダークテーマに合わせる
+                fig = px.line(df, x="Phase", y="Equity", markers=True, range_y=[0, 100], template="plotly_dark")
+                fig.update_traces(line=dict(color="#d4af37", width=4), marker=dict(size=10, color="#ffffff"), textposition="top center")
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    paper_bgcolor="#121212",
+                    plot_bgcolor="#1e1e1e"
+                )
                 st.plotly_chart(fig, use_container_width=True)
