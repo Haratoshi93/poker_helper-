@@ -39,18 +39,23 @@ st.markdown("""
         margin-bottom: 10px;
     }
     /* ピル（タップボタン）のフォントと余白を劇的に大きくして親指で押しやすく */
-    [data-testid="stPill"] {
+    [data-testid="stPill"], 
+    div[data-testid="stPills"] label, 
+    div[data-testid="stSegmentedControl"] label {
         padding: 0.8rem 1.2rem !important;
-        min-width: 5.5rem; /* マークボタンをさらに倍近く横に大きく */
-        flex-grow: 1; /* 余白を埋めるように横幅いっぱいに広げる */
-        text-align: center;
-        display: flex;
-        justify-content: center;
+        min-width: 5.5rem !important; 
+        flex-grow: 1 !important; 
+        text-align: center !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
     /* ピルの中の文字（マークや数字）自体を大きくする */
-    [data-testid="stPill"] span {
+    [data-testid="stPill"] span,
+    div[data-testid="stPills"] label span,
+    div[data-testid="stSegmentedControl"] label span {
         font-size: 1.6rem !important;
-        font-weight: bold;
+        font-weight: bold !important;
     }
     /* ラジオボタンやピルのコンテナの隙間を調整 */
     .stRadio > div { flex-wrap: wrap; gap: 8px; }
@@ -126,13 +131,16 @@ with st.container(border=True):
     with col1:
         hero1 = card_picker("Card 1", "h1")
         if hero1:
-            st.image(get_card_image_url(hero1), width=120)
+            # 画像を中央寄せにするためにカラムで挟む
+            img_c1, img_c2, img_c3 = st.columns([1, 3, 1])
+            img_c2.image(get_card_image_url(hero1), use_container_width=True)
             hero_cards.append(hero1)
     with col2:
         if hero1:
             hero2 = card_picker("Card 2", "h2")
             if hero2:
-                st.image(get_card_image_url(hero2), width=120)
+                img_c1, img_c2, img_c3 = st.columns([1, 3, 1])
+                img_c2.image(get_card_image_url(hero2), use_container_width=True)
                 hero_cards.append(hero2)
 
 # --- 3. プリフロップ判定（最重要機能） ---
@@ -145,13 +153,13 @@ if len(hero_cards) == 2:
     def get_preflop_advice(win_rate, num_villains):
         fair_share = 1.0 / (num_villains + 1)
         if win_rate >= fair_share * 1.5:
-            return "success", "Rank S : 非常に有利な手札 (トップクラスの強さ)"
+            return "success", "Rank S : 非常に有利 (トップクラス)"
         elif win_rate >= fair_share * 1.1:
-            return "info", "Rank A : 有利な手札 (平均以上のポテンシャル)"
+            return "info", "Rank A : 有利 (平均以上の強さ)"
         elif win_rate >= fair_share * 0.8:
-            return "warning", "Rank B : 注意が必要な手札 (平均を下回っています)"
+            return "warning", "Rank B : 注意 (平均以下の強さ)"
         else:
-            return "error", "Rank C : 非常に厳しい手札 (勝つのが難しい強さ)"
+            return "error", "Rank C : 厳しい (勝つのは困難)"
 
     with st.container(border=True):
         st.markdown("**Hand Potential (手札のポテンシャル)**")
