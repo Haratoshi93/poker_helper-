@@ -8,53 +8,71 @@ st.set_page_config(page_title="Poker Helper", layout="wide")
 st.title("ポーカー 勝率可視化アプリ")
 st.markdown("自分の手札と場のカードを設定して、勝率がどう変化するか確認しましょう。")
 
-# カードを初心者向けに表示するための関数
-def format_card(card_code):
-    suit_map = {'s': '♠ (スペード)', 'h': '♥ (ハート)', 'd': '♦ (ダイヤ)', 'c': '♣ (クラブ)'}
-    rank_map = {'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A'}
-    rank = card_code[0]
-    suit = card_code[1]
-    display_rank = rank_map.get(rank, rank)
-    display_suit = suit_map.get(suit, suit)
-    return f"{display_suit} の {display_rank}"
+# --- 定義 ---
+ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
+suits = ['s', 'h', 'd', 'c']
 
-# カードの画像URLを取得する関数 (Deck of Cards APIを利用)
+# 表示用の変換ルール
+suit_map = {'s': '♠ (スペード)', 'h': '♥ (ハート)', 'd': '♦ (ダイヤ)', 'c': '♣ (クラブ)'}
+suit_icon = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
+rank_map_display = {'T': '10'} 
+
+def format_suit(s): return suit_icon[s]
+def format_rank(r): return rank_map_display.get(r, r)
+def format_card_full(card_code):
+    return f"{suit_icon[card_code[1]]} の {format_rank(card_code[0])}"
+
+# 画像URL取得関数
 def get_card_image_url(card_code):
     rank = card_code[0].upper()
     suit = card_code[1].upper()
-    # APIの仕様上、10は'0'で表される
     if rank == 'T':
         rank = '0'
     return f"https://deckofcardsapi.com/static/img/{rank}{suit}.png"
 
-# カード設定
+
+# --- サイドバー：カード設定 ---
 st.sidebar.header("🎴 カード設定")
 
-ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
-suits = ['s', 'h', 'd', 'c']
-all_cards = [r+s for r in ranks for s in suits]
+# 使用済みのカードを記憶するセット（重複を防ぐため）
+used_cards = set()
 
 st.sidebar.subheader("あなたの手札（2枚）")
-hero_card_1 = st.sidebar.selectbox("1枚目", all_cards, index=all_cards.index('As'), format_func=format_card)
-hero_card_2 = st.sidebar.selectbox("2枚目", all_cards, index=all_cards.index('Ks'), format_func=format_card)
+
+# 1枚目
+st.sidebar.markdown("**1枚目**")
+# マークを横並びのボタンで選択
+suit1 = st.sidebar.radio("マーク1", suits, format_func=format_suit, key="s1", horizontal=True, label_visibility="collapsed")
+# 選ばれたマークの中で、まだ使われていない数字だけを選択肢にする
+avail_ranks1 = [r for r in ranks if f"{r}{suit1}" not in used_cards]
+rank1 = st.sidebar.selectbox("数字1", avail_ranks1, format_func=format_rank, key="r1", label_visibility="collapsed")
+hero1 = f"{rank1}{suit1}"
+used_cards.add(hero1)
+
+# 2枚目
+st.sidebar.markdown("**2枚目**")
+suit2 = st.sidebar.radio("マーク2", suits, format_func=format_suit, key="s2", horizontal=True, label_visibility="collapsed")
+# 1枚目で選んだカードは、ここの選択肢から自動的に消える
+avail_ranks2 = [r for r in ranks if f"{r}{suit2}" not in used_cards]
+rank2 = st.sidebar.selectbox("数字2", avail_ranks2, format_func=format_rank, key="r2", label_visibility="collapsed")
+hero2 = f"{rank2}{suit2}"
+used_cards.add(hero2)
+
+hero_cards = [hero1, hero2]
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("場の共通カード（ボード）")
 st.sidebar.markdown("開かれたカードを選んでください（最大5枚）")
 
-board_cards = st.sidebar.multiselect("共通カードを選択", all_cards, format_func=format_card, max_selections=5)
+# すでに手札で選ばれたカードを「除く」すべてのカードリスト
+available_board_cards = [f"{r}{s}" for s in suits for r in ranks if f"{r}{s}" not in used_cards]
+
+# ボードカードはマルチセレクトで。選んだ端からリストから消えるので重複しない
+board_cards = st.sidebar.multiselect("共通カードを選択", available_board_cards, format_func=format_card_full, max_selections=5)
 
 st.sidebar.markdown("---")
 num_villains = st.sidebar.slider("対戦相手の人数", min_value=1, max_value=8, value=1)
 
-# Main area
-hero_cards = [hero_card_1, hero_card_2]
-
-# Duplicate check
-selected_all = hero_cards + board_cards
-if len(selected_all) != len(set(selected_all)):
-    st.error("⚠️ エラー：同じカードが複数選択されています。別のカードを選んでください。")
-    st.stop()
 
 # --- ビジュアル表示エリア ---
 st.markdown("### 🃏 現在のカード")
@@ -62,16 +80,15 @@ col_hero, col_board = st.columns([1, 2])
 
 with col_hero:
     st.markdown("**あなたの手札**")
-    hc1, hc2, _ = st.columns([1, 1, 1]) # 見栄えを調整
+    hc1, hc2, _ = st.columns([1, 1, 1])
     with hc1:
-        st.image(get_card_image_url(hero_card_1), use_container_width=True)
+        st.image(get_card_image_url(hero1), use_container_width=True)
     with hc2:
-        st.image(get_card_image_url(hero_card_2), use_container_width=True)
+        st.image(get_card_image_url(hero2), use_container_width=True)
 
 with col_board:
     st.markdown("**場の共通カード**")
     if board_cards:
-        # 最大5枚分のカラムを作成
         b_cols = st.columns(5)
         for i, card in enumerate(board_cards):
             with b_cols[i]:
@@ -81,11 +98,10 @@ with col_board:
 
 st.markdown("---")
 
-# Equity calculation
+# --- 勝率計算と結果表示 ---
 with st.spinner('勝率を計算中...'):
     win_rate, tie_rate = calculate_equity(hero_cards, board_cards, num_villains)
 
-# 初心者向けのアドバイス表示
 def get_strength_text(win_rate, num_villains):
     fair_share = 1.0 / (num_villains + 1)
     if win_rate >= fair_share * 1.5:
