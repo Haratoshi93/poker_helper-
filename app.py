@@ -105,31 +105,61 @@ used_cards = set()
 
 # マークは巨大ボタン、数字はコンパクトなpills
 def card_picker(label, prefix):
-    st.markdown(f"**{label}**")
     suit_key = f"s_{prefix}_suit"
     final_key = f"s_{prefix}_final"
+    edit_key = f"s_{prefix}_edit"
     
-    if final_key in st.session_state and st.session_state[final_key]:
-        return st.session_state[final_key]
+    current_card = st.session_state.get(final_key)
+    # カードが選ばれていないか、編集モードになっている場合に True
+    is_editing = st.session_state.get(edit_key, current_card is None)
+    
+    if current_card and not is_editing:
+        # 選ばれた後の「たたまれた」状態
+        with st.container(border=True):
+            ec1, ec2 = st.columns([3, 1])
+            ec1.markdown(f"**{label}** : {format_card_full(current_card)}")
+            if ec2.button("変更", key=f"btn_edit_{prefix}", use_container_width=True):
+                st.session_state[edit_key] = True
+                st.rerun()
+        used_cards.add(current_card)
+        return current_card
         
-    suit = st.session_state.get(suit_key)
-    cols = st.columns(4)
-    for i, s in enumerate(suits):
-        btn_type = "primary" if suit == s else "secondary"
-        if cols[i].button(format_suit(s), key=f"btn_{prefix}_suit_{s}", use_container_width=True, type=btn_type):
-            st.session_state[suit_key] = s
-            st.rerun()
-            
-    if suit:
-        avail_ranks = [r for r in ranks if f"{r}{suit}" not in used_cards]
-        # 数字は元のpillsに戻す
-        rank = st.pills(f"rank_{prefix}", avail_ranks, format_func=format_rank, key=f"pill_{prefix}_rank", label_visibility="collapsed")
-        if rank:
-            card_code = f"{rank}{suit}"
-            st.session_state[final_key] = card_code
-            used_cards.add(card_code)
-            st.rerun()
-    return None
+    else:
+        # 編集（選択）モード
+        st.markdown(f"**{label}**")
+        suit = st.session_state.get(suit_key)
+        
+        # マークボタン
+        cols = st.columns(4)
+        for i, s in enumerate(suits):
+            btn_type = "primary" if suit == s else "secondary"
+            if cols[i].button(format_suit(s), key=f"btn_{prefix}_suit_{s}", use_container_width=True, type=btn_type):
+                st.session_state[suit_key] = s
+                if f"pill_{prefix}_rank" in st.session_state:
+                    del st.session_state[f"pill_{prefix}_rank"]
+                st.rerun()
+                
+        # 数字ボタン
+        if suit:
+            # 自分のカードは選択肢から除外しない
+            avail_ranks = [r for r in ranks if (f"{r}{suit}" not in used_cards) or (current_card and f"{r}{suit}" == current_card)]
+            rank = st.pills(f"rank_{prefix}", avail_ranks, format_func=format_rank, key=f"pill_{prefix}_rank", label_visibility="collapsed")
+            if rank:
+                card_code = f"{rank}{suit}"
+                st.session_state[final_key] = card_code
+                st.session_state[edit_key] = False # 選んだらたたむ
+                used_cards.add(card_code)
+                st.rerun()
+                
+        # 既に選んだカードがある場合はキャンセル（閉じる）ボタンを表示
+        if current_card:
+            if st.button("キャンセル", key=f"btn_cancel_{prefix}", use_container_width=True):
+                st.session_state[edit_key] = False
+                st.rerun()
+                
+        if current_card:
+            used_cards.add(current_card)
+        return current_card
 
 # --- 1. 人数設定 ---
 st.markdown("### VILLAINS (対戦人数)")
