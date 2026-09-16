@@ -3,31 +3,19 @@ import pandas as pd
 import plotly.express as px
 from poker_calc import calculate_equity, get_hand_type
 
-# スマホ向けに中央寄せ（centered）、サイドバーは最初から閉じるか使わない
 st.set_page_config(page_title="Poker Helper", layout="centered", initial_sidebar_state="collapsed")
 
-# カスタムCSSで全体をおしゃれに
 st.markdown("""
 <style>
-    /* 全体のフォントや余白の微調整 */
-    .main {
-        background-color: #f8fafc;
-    }
-    /* メトリクス（勝率などの数字）を大きく見やすく */
-    [data-testid="stMetricValue"] {
-        font-size: 2.5rem !important;
-        color: #1e3a8a;
-    }
-    h1, h2, h3 {
-        color: #0f172a;
-    }
+    .main { background-color: #f8fafc; }
+    [data-testid="stMetricValue"] { font-size: 2.5rem !important; color: #1e3a8a; }
+    h1, h2, h3, h4 { color: #0f172a; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🃏 Poker Helper")
 st.markdown("スマホでサクサク使える！ポーカー勝率計算アプリ")
 
-# --- 定義 ---
 ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 suits = ['s', 'h', 'd', 'c']
 suit_icon = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
@@ -52,7 +40,6 @@ num_villains = st.slider("あなた以外のプレイヤー数を設定してく
 
 # --- 2. 手札設定 ---
 st.markdown("### 🎴 2. あなたの手札")
-# 枠付きコンテナで囲んでカードっぽく見せる
 with st.container(border=True):
     col1, col2 = st.columns(2)
     
@@ -63,7 +50,6 @@ with st.container(border=True):
         rank1 = st.selectbox("数字1", avail_ranks1, format_func=format_rank, key="r1", label_visibility="collapsed")
         hero1 = f"{rank1}{suit1}"
         used_cards.add(hero1)
-        # 選択したカードの画像をすぐに表示（スマホでも見やすいサイズに）
         st.image(get_card_image_url(hero1), width=120)
 
     with col2:
@@ -80,16 +66,45 @@ hero_cards = [hero1, hero2]
 # --- 3. 場のカード設定 ---
 st.markdown("### 🌐 3. 場の共通カード")
 with st.container(border=True):
-    available_board_cards = [f"{r}{s}" for s in suits for r in ranks if f"{r}{s}" not in used_cards]
-    board_cards = st.multiselect("開かれたカードを選んでください（最大5枚）", available_board_cards, format_func=format_card_full, max_selections=5)
+    # 選択されたボードカードを格納するリスト
+    board_cards = []
     
+    # フロップ (3枚)
+    st.markdown("#### ① フロップ (最初の3枚)")
+    available_flop = [f"{r}{s}" for s in suits for r in ranks if f"{r}{s}" not in used_cards]
+    flop_cards = st.multiselect("フロップを選択", available_flop, format_func=format_card_full, max_selections=3)
+    used_cards.update(flop_cards)
+    board_cards.extend(flop_cards)
+    
+    # フロップが3枚揃った場合のみ、ターンを表示
+    if len(flop_cards) == 3:
+        st.markdown("---")
+        st.markdown("#### ② ターン (4枚目)")
+        available_turn = [f"{r}{s}" for s in suits for r in ranks if f"{r}{s}" not in used_cards]
+        turn_card = st.selectbox("ターンを選択", available_turn, format_func=format_card_full, index=None, placeholder="選択してください...")
+        
+        if turn_card:
+            used_cards.add(turn_card)
+            board_cards.append(turn_card)
+            
+            # ターンが選ばれた場合のみ、リバーを表示
+            st.markdown("---")
+            st.markdown("#### ③ リバー (最後の5枚目)")
+            available_river = [f"{r}{s}" for s in suits for r in ranks if f"{r}{s}" not in used_cards]
+            river_card = st.selectbox("リバーを選択", available_river, format_func=format_card_full, index=None, placeholder="選択してください...")
+            
+            if river_card:
+                board_cards.append(river_card)
+    
+    # 画像の表示（横に最大5枚並べる）
+    st.markdown("---")
     if board_cards:
         b_cols = st.columns(5)
         for i, card in enumerate(board_cards):
             with b_cols[i]:
                 st.image(get_card_image_url(card), use_container_width=True)
     else:
-        st.caption("※まだ場のカードが開かれていない（プリフロップ）状態です")
+        st.info("※まだ場のカードは開かれていません（プリフロップ）")
 
 # --- 4. 結果表示 ---
 st.markdown("---")
@@ -105,7 +120,6 @@ def get_strength_text(win_rate, num_villains):
     elif win_rate >= fair_share * 0.7: return "⚠️ 注意 (少し不利)"
     else: return "❄️ 厳しい (フォールド推奨)"
 
-# 結果を大きく表示するコンテナ
 with st.container(border=True):
     res_col1, res_col2 = st.columns(2)
     res_col1.metric("👑 現在の勝率", f"{win_rate*100:.1f}%")
@@ -130,13 +144,11 @@ for i in [0, 3, 4, 5]:
 
 if equity_history:
     df = pd.DataFrame(equity_history)
-    # おしゃれな白いテーマのグラフ
     fig = px.line(df, x="フェーズ", y="勝率", markers=True, range_y=[0, 100], template="plotly_white")
     fig.update_traces(
-        line=dict(color="#2563eb", width=4), # 線の色と太さ
-        marker=dict(size=10, color="#ef4444"), # マーカーの色と大きさ
+        line=dict(color="#2563eb", width=4), 
+        marker=dict(size=10, color="#ef4444"), 
         textposition="top center"
     )
-    # スマホで見やすいように余白を調整
     fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
     st.plotly_chart(fig, use_container_width=True)
