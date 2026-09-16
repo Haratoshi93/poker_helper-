@@ -17,15 +17,15 @@ st.markdown("""
     }
     /* 勝率などの数値をスマホでも1行に収まるスタイリッシュなサイズに */
     [data-testid="stMetricValue"] { 
-        font-size: 2.4rem !important; 
+        font-size: 2.8rem !important; 
         color: #d4af37 !important; 
-        font-family: 'Georgia', serif;
+        font-weight: bold;
     }
     [data-testid="stMetricLabel"] {
         color: #a0a0a0 !important;
         font-weight: bold;
         letter-spacing: 1px;
-        font-size: 0.9rem !important;
+        font-size: 1.0rem !important;
     }
     /* 見出しのデザインとフォントサイズのスマホ最適化 */
     h1 { font-size: 1.8rem !important; }
@@ -34,7 +34,6 @@ st.markdown("""
     h4 { font-size: 1.0rem !important; }
     h1, h2, h3, h4 { 
         color: #d4af37 !important; 
-        font-family: 'Georgia', serif;
         border-bottom: 1px solid #333;
         padding-bottom: 5px;
         margin-bottom: 10px;
@@ -138,9 +137,7 @@ if len(hero_cards) == 2:
 
     with st.container(border=True):
         st.markdown(f"**Analysis Result**\n\n{get_preflop_advice(win_rate, num_villains)}")
-        res_col1, res_col2 = st.columns(2)
-        res_col1.metric("WIN %", f"{win_rate*100:.1f}%")
-        res_col2.metric("TIE %", f"{tie_rate*100:.1f}%")
+        st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
 
     st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
 
@@ -187,7 +184,7 @@ if len(hero_cards) == 2:
             with st.container(border=True):
                 hand_type = get_hand_type(hero_cards, board_cards)
                 st.markdown(f"**Current Made Hand:** {hand_type}")
-                st.metric("WIN %", f"{wr_board*100:.1f}%")
+                st.metric("WIN % (勝率)", f"{wr_board*100:.1f}%")
                 
             st.markdown("#### Equity Chart")
             phases = ["Preflop", "Flop", "Turn", "River"]
