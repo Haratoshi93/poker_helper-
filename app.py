@@ -80,7 +80,7 @@ with st.container(border=True):
 # --- 3. プリフロップ判定（最重要機能） ---
 if len(hero_cards) == 2:
     st.markdown("---")
-    st.markdown("### 🎯 エントリー判定")
+    st.markdown("### 🎯 手札のポテンシャル（強さの目安）")
     
     with st.spinner('勝率を計算中...'):
         win_rate, tie_rate = calculate_equity(hero_cards, [], num_villains, iterations=2000)
@@ -88,16 +88,16 @@ if len(hero_cards) == 2:
     def get_preflop_advice(win_rate, num_villains):
         fair_share = 1.0 / (num_villains + 1)
         if win_rate >= fair_share * 1.5:
-            return "🔥 エントリー推奨！ (かなり強い手札です)"
+            return "🔥 非常に強い手札です (勝率上位クラス)"
         elif win_rate >= fair_share * 1.1:
-            return "👍 参加してもOK (平均より強いです)"
+            return "👍 平均より強い手札です"
         elif win_rate >= fair_share * 0.8:
-            return "⚠️ 要注意 (ポジションが良ければ参加)"
+            return "⚠️ やや弱めの手札です (平均を下回っています)"
         else:
-            return "❄️ フォールド推奨 (おとなしく降りるのが無難です)"
+            return "❄️ 弱い手札です (厳しい戦いが予想されます)"
 
     with st.container(border=True):
-        st.success(f"**【AIからのアドバイス】**\n\n{get_preflop_advice(win_rate, num_villains)}")
+        st.success(f"**【手札の強さの目安】**\n\n{get_preflop_advice(win_rate, num_villains)}")
         res_col1, res_col2 = st.columns(2)
         res_col1.metric("現在の勝率", f"{win_rate*100:.1f}%")
         res_col2.metric("引き分け率", f"{tie_rate*100:.1f}%")
