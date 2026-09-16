@@ -8,6 +8,17 @@ st.set_page_config(page_title="Texas Hold'em Analyzer", layout="centered", initi
 # ゴージャスかつスマホ（モバイル）に最適化されたカスタムCSS
 st.markdown("""
 <style>
+    /* Streamlit Cloud特有のロゴ、ヘッダー、フッターを完全に非表示 */
+    header[data-testid="stHeader"] {display: none !important;}
+    footer {visibility: hidden !important;}
+    .stApp > header {display: none !important;}
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    div[data-testid="viewerBadge"] {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;}
+    a[href*="streamlit"] {display: none !important;}
+    #MainMenu {visibility: hidden !important;}
+    
     /* 全体の余白を極限まで詰めてスマホの画面を広く使う */
     .block-container {
         padding-top: 1rem !important;
