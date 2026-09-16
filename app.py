@@ -221,8 +221,8 @@ if len(hero_cards) == 2:
 
     # --- 4. オプション機能（フロップ以降） ---
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("ADVANCED: Postflop Simulation (フロップ以降の解析)", expanded=False):
-        st.markdown("場の共通カード (Community Cards) を展開して解析します。")
+    with st.expander("POSTFLOP (フロップ以降)", expanded=False):
+        st.markdown("場のカード (Community Cards) を展開して解析します。")
         
         board_cards = []
         with st.container(border=True):
