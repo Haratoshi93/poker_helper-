@@ -38,13 +38,19 @@ st.markdown("""
         padding-bottom: 5px;
         margin-bottom: 10px;
     }
-    /* ピル（タップボタン）のフォントと余白を大きくして親指で押しやすく */
+    /* ピル（タップボタン）のフォントと余白を劇的に大きくして親指で押しやすく */
     [data-testid="stPill"] {
-        font-size: 1.1rem !important;
-        padding: 0.5rem 1rem !important;
+        padding: 0.8rem 1.2rem !important;
+        min-width: 4rem;
+        text-align: center;
+    }
+    /* ピルの中の文字（マークや数字）自体を大きくする */
+    [data-testid="stPill"] span {
+        font-size: 1.5rem !important;
+        font-weight: bold;
     }
     /* ラジオボタンやピルのコンテナの隙間を調整 */
-    .stRadio > div { flex-wrap: wrap; gap: 8px; }
+    .stRadio > div { flex-wrap: wrap; gap: 10px; }
     
     /* 区切り線をさりげなく */
     hr {
