@@ -60,6 +60,15 @@ st.markdown("""
         margin: 0 auto;
     }
     
+    /* 数字選択のピル（st.pills）のスタイルを復元・調整 */
+    [data-testid="stPill"] {
+        padding: 0.5rem 0.8rem !important;
+    }
+    [data-testid="stPill"] span {
+        font-size: 1.3rem !important;
+        font-weight: bold !important;
+    }
+    
     /* 区切り線をさりげなく */
     hr {
         border-color: #333 !important;
@@ -88,23 +97,21 @@ def get_card_image_url(card_code):
 # --- リセット処理 ---
 def reset_cards():
     for key in list(st.session_state.keys()):
-        if key.startswith("s_") or key.startswith("h_") or key.startswith("f_") or key.startswith("t_") or key.startswith("r_"):
+        if key.startswith("s_") or key.startswith("h_") or key.startswith("f_") or key.startswith("t_") or key.startswith("r_") or key.startswith("pill_"):
             del st.session_state[key]
     used_cards.clear()
 
 used_cards = set()
 
-# 確実に大きく押しやすい自作ボタンピッカー（CSSハック不要）
+# マークは巨大ボタン、数字はコンパクトなpills
 def card_picker(label, prefix):
     st.markdown(f"**{label}**")
     suit_key = f"s_{prefix}_suit"
     final_key = f"s_{prefix}_final"
     
-    # 既に確定している場合
     if final_key in st.session_state and st.session_state[final_key]:
         return st.session_state[final_key]
         
-    # マークの選択
     suit = st.session_state.get(suit_key)
     cols = st.columns(4)
     for i, s in enumerate(suits):
@@ -113,16 +120,15 @@ def card_picker(label, prefix):
             st.session_state[suit_key] = s
             st.rerun()
             
-    # マークが選ばれたら数字の選択を表示
     if suit:
         avail_ranks = [r for r in ranks if f"{r}{suit}" not in used_cards]
-        rank_cols = st.columns(5) # 5列のグリッド
-        for i, r in enumerate(avail_ranks):
-            if rank_cols[i % 5].button(format_rank(r), key=f"btn_{prefix}_rank_{r}", use_container_width=True):
-                card_code = f"{r}{suit}"
-                st.session_state[final_key] = card_code
-                used_cards.add(card_code)
-                st.rerun()
+        # 数字は元のpillsに戻す
+        rank = st.pills(f"rank_{prefix}", avail_ranks, format_func=format_rank, key=f"pill_{prefix}_rank", label_visibility="collapsed")
+        if rank:
+            card_code = f"{rank}{suit}"
+            st.session_state[final_key] = card_code
+            used_cards.add(card_code)
+            st.rerun()
     return None
 
 # --- 1. 人数設定 ---
@@ -136,7 +142,6 @@ with st.container(border=True):
     hero1 = card_picker("Card 1", "h1")
     if hero1:
         hero_cards.append(hero1)
-        # 1枚目が選ばれたら2枚目を表示
         st.markdown("---")
         hero2 = card_picker("Card 2", "h2")
         if hero2:
@@ -168,14 +173,18 @@ if len(hero_cards) == 2:
         elif msg_type == "warning": st.warning(msg_text)
         elif msg_type == "error": st.error(msg_text)
         
-        # 画像と勝率を横に並べて表示（画像サイズを小さく）
-        res_c1, res_c2, res_c3 = st.columns([1, 1, 2])
-        with res_c1:
-            st.image(get_card_image_url(hero_cards[0]), use_container_width=True)
-        with res_c2:
-            st.image(get_card_image_url(hero_cards[1]), use_container_width=True)
-        with res_c3:
-            st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
+        # HTML/CSSでスマホでも強制的に横並びにする
+        img1_url = get_card_image_url(hero_cards[0])
+        img2_url = get_card_image_url(hero_cards[1])
+        html_code = f"""
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
+            <img src="{img1_url}" style="width: 40%; max-width: 120px; border-radius: 6px;">
+            <img src="{img2_url}" style="width: 40%; max-width: 120px; border-radius: 6px;">
+        </div>
+        """
+        st.markdown(html_code, unsafe_allow_html=True)
+        
+        st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
 
     st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
 
@@ -186,33 +195,27 @@ if len(hero_cards) == 2:
         
         board_cards = []
         with st.container(border=True):
-            st.markdown("**COMMUNITY CARDS**")
-            b_cols = st.columns(5)
-            
             f1 = card_picker("Flop 1", "f1")
             if f1:
                 board_cards.append(f1)
-                b_cols[0].image(get_card_image_url(f1), use_container_width=True)
-                
                 f2 = card_picker("Flop 2", "f2")
                 if f2:
                     board_cards.append(f2)
-                    b_cols[1].image(get_card_image_url(f2), use_container_width=True)
-                    
                     f3 = card_picker("Flop 3", "f3")
                     if f3:
                         board_cards.append(f3)
-                        b_cols[2].image(get_card_image_url(f3), use_container_width=True)
-                        
                         t = card_picker("Turn (4th)", "t")
                         if t:
                             board_cards.append(t)
-                            b_cols[3].image(get_card_image_url(t), use_container_width=True)
-                            
                             r = card_picker("River (5th)", "r")
                             if r:
                                 board_cards.append(r)
-                                b_cols[4].image(get_card_image_url(r), use_container_width=True)
+                                
+            # 盤面のカードをHTMLで強制横並び表示
+            if board_cards:
+                st.markdown("**COMMUNITY CARDS**")
+                imgs_html = "".join([f'<img src="{get_card_image_url(c)}" style="width: 18%; max-width: 80px; margin: 1%; border-radius: 4px;">' for c in board_cards])
+                st.markdown(f'<div style="display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">{imgs_html}</div>', unsafe_allow_html=True)
         
         if board_cards:
             st.markdown("#### Postflop Analysis Result")
