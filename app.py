@@ -87,6 +87,7 @@ rank_map_display = {'T': '10'}
 
 def format_suit(s): return suit_icon[s]
 def format_rank(r): return rank_map_display.get(r, r)
+def format_card_full(c): return f"{suit_icon[c[1]]} {rank_map_display.get(c[0], c[0])}"
 
 def get_card_image_url(card_code):
     rank = card_code[0].upper()
