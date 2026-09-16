@@ -41,16 +41,28 @@ st.markdown("""
     /* ピル（タップボタン）のフォントと余白を劇的に大きくして親指で押しやすく */
     [data-testid="stPill"] {
         padding: 0.8rem 1.2rem !important;
-        min-width: 4rem;
+        min-width: 5.5rem; /* マークボタンをさらに倍近く横に大きく */
+        flex-grow: 1; /* 余白を埋めるように横幅いっぱいに広げる */
         text-align: center;
+        display: flex;
+        justify-content: center;
     }
     /* ピルの中の文字（マークや数字）自体を大きくする */
     [data-testid="stPill"] span {
-        font-size: 1.5rem !important;
+        font-size: 1.6rem !important;
         font-weight: bold;
     }
     /* ラジオボタンやピルのコンテナの隙間を調整 */
-    .stRadio > div { flex-wrap: wrap; gap: 10px; }
+    .stRadio > div { flex-wrap: wrap; gap: 8px; }
+    
+    /* カード画像を中央寄せにする */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+    [data-testid="stImage"] img {
+        margin: 0 auto;
+    }
     
     /* 区切り線をさりげなく */
     hr {
