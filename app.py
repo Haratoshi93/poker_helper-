@@ -5,32 +5,47 @@ from poker_calc import calculate_equity, get_hand_type
 
 st.set_page_config(page_title="Texas Hold'em Analyzer", layout="centered", initial_sidebar_state="collapsed")
 
-# ゴージャスなUIにするためのカスタムCSS
+# ゴージャスかつスマホ（モバイル）に最適化されたカスタムCSS
 st.markdown("""
 <style>
-    /* 勝率などの数値をより高級感のあるゴールドに */
+    /* 全体の余白を詰めてスマホの画面を広く使う */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    /* 勝率などの数値をスマホでも1行に収まるスタイリッシュなサイズに */
     [data-testid="stMetricValue"] { 
-        font-size: 2.8rem !important; 
+        font-size: 2.2rem !important; 
         color: #d4af37 !important; 
         font-family: 'Georgia', serif;
     }
     [data-testid="stMetricLabel"] {
         color: #a0a0a0 !important;
         font-weight: bold;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem !important;
     }
-    /* 見出しのデザイン */
+    /* 見出しのデザインとフォントサイズのスマホ最適化 */
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.2rem !important; }
+    h4 { font-size: 1.0rem !important; }
     h1, h2, h3, h4 { 
         color: #d4af37 !important; 
         font-family: 'Georgia', serif;
         border-bottom: 1px solid #333;
-        padding-bottom: 10px;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
     }
     /* ピルやラジオボタンのレイアウト調整 */
     .stRadio > div { flex-wrap: wrap; }
     /* 区切り線をさりげなく */
     hr {
         border-color: #333 !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -90,13 +105,13 @@ with st.container(border=True):
     with col1:
         hero1 = card_picker("Card 1", "h1")
         if hero1:
-            st.image(get_card_image_url(hero1), width=100)
+            st.image(get_card_image_url(hero1), width=120)
             hero_cards.append(hero1)
     with col2:
         if hero1:
             hero2 = card_picker("Card 2", "h2")
             if hero2:
-                st.image(get_card_image_url(hero2), width=100)
+                st.image(get_card_image_url(hero2), width=120)
                 hero_cards.append(hero2)
 
 # --- 3. プリフロップ判定（最重要機能） ---
