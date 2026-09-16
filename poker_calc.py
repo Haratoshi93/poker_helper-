@@ -5,7 +5,6 @@ evaluator = Evaluator()
 
 def calculate_equity(hero_cards_str, board_cards_str, num_villains=1, iterations=1000):
     try:
-        # 文字列表現がeval7は 'As', treysは 'As' なのでそのまま使える
         hero_cards = [Card.new(c) for c in hero_cards_str]
         board_cards = [Card.new(c) for c in board_cards_str] if board_cards_str else []
         
@@ -15,32 +14,36 @@ def calculate_equity(hero_cards_str, board_cards_str, num_villains=1, iterations
         hero_wins = 0
         ties = 0
         
+        # --- ループ外での事前準備（高速化の鍵） ---
+        full_deck = Deck().GetFullDeck() # 全カードのリストを取得
+        known_cards = set(hero_cards + board_cards)
+        # 既知のカードを取り除いた「山札」をリストとして用意
+        remaining_cards = [c for c in full_deck if c not in known_cards]
+        
+        cards_to_draw_for_board = 5 - len(board_cards)
+        cards_to_draw_for_villains = num_villains * 2
+        total_cards_to_draw = cards_to_draw_for_board + cards_to_draw_for_villains
+        
         for _ in range(iterations):
-            deck = Deck()
-            # 既知のカードを取り除くために、手札とボードのカードはdeckから引いたことにする
-            deck.cards = [c for c in deck.cards if c not in hero_cards and c not in board_cards]
+            # random.sample を使って必要なカードを一度にすべて引く（圧倒的に高速）
+            drawn_cards = random.sample(remaining_cards, total_cards_to_draw)
             
-            # ボードに必要なカードを引く
-            cards_to_draw = 5 - len(board_cards)
-            drawn_board = deck.draw(cards_to_draw)
-            if type(drawn_board) != list:
-                drawn_board = [drawn_board] if drawn_board else []
-                
+            # 引いたカードをボードと敵の手札に分配
+            drawn_board = drawn_cards[:cards_to_draw_for_board]
             full_board = board_cards + drawn_board
             
-            # 相手の手札を引く
-            villains_cards = []
-            for i in range(num_villains):
-                v_cards = deck.draw(2)
-                if type(v_cards) != list:
-                    v_cards = [v_cards] # just in case
-                villains_cards.append(v_cards)
-                
-            # treysはスコアが低い方が強い
+            villains_flat = drawn_cards[cards_to_draw_for_board:]
+            
+            # スコア判定 (treysはスコアが低い方が強い)
             hero_score = evaluator.evaluate(full_board, hero_cards)
             
-            villains_scores = [evaluator.evaluate(full_board, v) for v in villains_cards]
-            best_villain_score = min(villains_scores)
+            # 最強の敵のスコアを探す
+            best_villain_score = 99999
+            for i in range(num_villains):
+                v_cards = [villains_flat[i*2], villains_flat[i*2 + 1]]
+                score = evaluator.evaluate(full_board, v_cards)
+                if score < best_villain_score:
+                    best_villain_score = score
             
             if hero_score < best_villain_score:
                 hero_wins += 1
