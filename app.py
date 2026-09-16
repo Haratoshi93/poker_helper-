@@ -34,31 +34,22 @@ st.markdown("""
     h4 { font-size: 1.0rem !important; }
     h1, h2, h3, h4 { 
         color: #d4af37 !important; 
+        font-family: 'Georgia', serif;
         border-bottom: 1px solid #333;
         padding-bottom: 5px;
         margin-bottom: 10px;
     }
-    /* ピル（タップボタン）のフォントと余白を劇的に大きくして親指で押しやすく */
-    [data-testid="stPill"], 
-    div[data-testid="stPills"] label, 
-    div[data-testid="stSegmentedControl"] label {
-        padding: 0.8rem 1.2rem !important;
-        min-width: 5.5rem !important; 
-        flex-grow: 1 !important; 
-        text-align: center !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
+    
+    /* 自作ボタンピッカー（st.button）のフォントをさらに大きく */
+    button[data-testid="baseButton-secondary"],
+    button[data-testid="baseButton-primary"] {
+        min-height: 3.5rem !important;
     }
-    /* ピルの中の文字（マークや数字）自体を大きくする */
-    [data-testid="stPill"] span,
-    div[data-testid="stPills"] label span,
-    div[data-testid="stSegmentedControl"] label span {
+    button[data-testid="baseButton-secondary"] p,
+    button[data-testid="baseButton-primary"] p {
         font-size: 1.6rem !important;
         font-weight: bold !important;
     }
-    /* ラジオボタンやピルのコンテナの隙間を調整 */
-    .stRadio > div { flex-wrap: wrap; gap: 8px; }
     
     /* カード画像を中央寄せにする */
     [data-testid="stImage"] {
@@ -96,52 +87,60 @@ def get_card_image_url(card_code):
 
 # --- リセット処理 ---
 def reset_cards():
-    keys_to_reset = [
-        'h1_suit', 'h1_rank', 'h2_suit', 'h2_rank',
-        'f1_suit', 'f1_rank', 'f2_suit', 'f2_rank', 'f3_suit', 'f3_rank',
-        't_suit', 't_rank', 'r_suit', 'r_rank'
-    ]
-    for k in keys_to_reset:
-        if k in st.session_state:
-            st.session_state[k] = None
+    for key in list(st.session_state.keys()):
+        if key.startswith("s_") or key.startswith("h_") or key.startswith("f_") or key.startswith("t_") or key.startswith("r_"):
+            del st.session_state[key]
+    used_cards.clear()
 
 used_cards = set()
 
-def card_picker(label_prefix, key_prefix):
-    st.markdown(f"**{label_prefix}**")
-    suit = st.pills(f"{key_prefix}_suit_label", suits, format_func=format_suit, key=f"{key_prefix}_suit", label_visibility="collapsed")
+# 確実に大きく押しやすい自作ボタンピッカー（CSSハック不要）
+def card_picker(label, prefix):
+    st.markdown(f"**{label}**")
+    suit_key = f"s_{prefix}_suit"
+    final_key = f"s_{prefix}_final"
+    
+    # 既に確定している場合
+    if final_key in st.session_state and st.session_state[final_key]:
+        return st.session_state[final_key]
+        
+    # マークの選択
+    suit = st.session_state.get(suit_key)
+    cols = st.columns(4)
+    for i, s in enumerate(suits):
+        btn_type = "primary" if suit == s else "secondary"
+        if cols[i].button(format_suit(s), key=f"btn_{prefix}_suit_{s}", use_container_width=True, type=btn_type):
+            st.session_state[suit_key] = s
+            st.rerun()
+            
+    # マークが選ばれたら数字の選択を表示
     if suit:
         avail_ranks = [r for r in ranks if f"{r}{suit}" not in used_cards]
-        rank = st.pills(f"{key_prefix}_rank_label", avail_ranks, format_func=format_rank, key=f"{key_prefix}_rank", label_visibility="collapsed")
-        if rank:
-            card_code = f"{rank}{suit}"
-            used_cards.add(card_code)
-            return card_code
+        rank_cols = st.columns(5) # 5列のグリッド
+        for i, r in enumerate(avail_ranks):
+            if rank_cols[i % 5].button(format_rank(r), key=f"btn_{prefix}_rank_{r}", use_container_width=True):
+                card_code = f"{r}{suit}"
+                st.session_state[final_key] = card_code
+                used_cards.add(card_code)
+                st.rerun()
     return None
 
 # --- 1. 人数設定 ---
 st.markdown("### VILLAINS (対戦人数)")
 num_villains = st.slider("対戦人数を選択してください", min_value=1, max_value=8, value=1, label_visibility="collapsed")
 
-# --- 2. 手札設定 (メイン機能) ---
+# --- 2. 手札設定 ---
 st.markdown("### HOLE CARDS")
 hero_cards = []
 with st.container(border=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        hero1 = card_picker("Card 1", "h1")
-        if hero1:
-            # 画像を中央寄せにするためにカラムで挟む
-            img_c1, img_c2, img_c3 = st.columns([1, 3, 1])
-            img_c2.image(get_card_image_url(hero1), use_container_width=True)
-            hero_cards.append(hero1)
-    with col2:
-        if hero1:
-            hero2 = card_picker("Card 2", "h2")
-            if hero2:
-                img_c1, img_c2, img_c3 = st.columns([1, 3, 1])
-                img_c2.image(get_card_image_url(hero2), use_container_width=True)
-                hero_cards.append(hero2)
+    hero1 = card_picker("Card 1", "h1")
+    if hero1:
+        hero_cards.append(hero1)
+        # 1枚目が選ばれたら2枚目を表示
+        st.markdown("---")
+        hero2 = card_picker("Card 2", "h2")
+        if hero2:
+            hero_cards.append(hero2)
 
 # --- 3. プリフロップ判定（最重要機能） ---
 if len(hero_cards) == 2:
@@ -169,7 +168,14 @@ if len(hero_cards) == 2:
         elif msg_type == "warning": st.warning(msg_text)
         elif msg_type == "error": st.error(msg_text)
         
-        st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
+        # 画像と勝率を横に並べて表示（画像サイズを小さく）
+        res_c1, res_c2, res_c3 = st.columns([1, 1, 2])
+        with res_c1:
+            st.image(get_card_image_url(hero_cards[0]), use_container_width=True)
+        with res_c2:
+            st.image(get_card_image_url(hero_cards[1]), use_container_width=True)
+        with res_c3:
+            st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
 
     st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
 
