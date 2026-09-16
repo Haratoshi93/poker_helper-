@@ -18,6 +18,15 @@ def format_card(card_code):
     display_suit = suit_map.get(suit, suit)
     return f"{display_suit} の {display_rank}"
 
+# カードの画像URLを取得する関数 (Deck of Cards APIを利用)
+def get_card_image_url(card_code):
+    rank = card_code[0].upper()
+    suit = card_code[1].upper()
+    # APIの仕様上、10は'0'で表される
+    if rank == 'T':
+        rank = '0'
+    return f"https://deckofcardsapi.com/static/img/{rank}{suit}.png"
+
 # カード設定
 st.sidebar.header("🎴 カード設定")
 
@@ -47,13 +56,37 @@ if len(selected_all) != len(set(selected_all)):
     st.error("⚠️ エラー：同じカードが複数選択されています。別のカードを選んでください。")
     st.stop()
 
+# --- ビジュアル表示エリア ---
+st.markdown("### 🃏 現在のカード")
+col_hero, col_board = st.columns([1, 2])
+
+with col_hero:
+    st.markdown("**あなたの手札**")
+    hc1, hc2, _ = st.columns([1, 1, 1]) # 見栄えを調整
+    with hc1:
+        st.image(get_card_image_url(hero_card_1), use_container_width=True)
+    with hc2:
+        st.image(get_card_image_url(hero_card_2), use_container_width=True)
+
+with col_board:
+    st.markdown("**場の共通カード**")
+    if board_cards:
+        # 最大5枚分のカラムを作成
+        b_cols = st.columns(5)
+        for i, card in enumerate(board_cards):
+            with b_cols[i]:
+                st.image(get_card_image_url(card), use_container_width=True)
+    else:
+        st.info("まだ場のカードは開かれていません。")
+
+st.markdown("---")
+
 # Equity calculation
 with st.spinner('勝率を計算中...'):
     win_rate, tie_rate = calculate_equity(hero_cards, board_cards, num_villains)
 
 # 初心者向けのアドバイス表示
 def get_strength_text(win_rate, num_villains):
-    # 相手の人数によって必要な勝率の目安は変わる
     fair_share = 1.0 / (num_villains + 1)
     if win_rate >= fair_share * 1.5:
         return "🔥 かなり強い！ (有利)"
