@@ -155,7 +155,7 @@ def card_picker(label, prefix):
         if suit:
             # 自分のカードは選択肢から除外しない
             avail_ranks = [r for r in ranks if (f"{r}{suit}" not in used_cards) or (current_card and f"{r}{suit}" == current_card)]
-            rank = st.pills(f"rank_{prefix}", avail_ranks, format_func=format_rank, key=f"pill_{prefix}_rank", label_visibility="collapsed")
+            rank = st.radio(f"rank_{prefix}", avail_ranks, format_func=format_rank, key=f"pill_{prefix}_rank", label_visibility="collapsed", horizontal=True, index=None)
             if rank:
                 card_code = f"{rank}{suit}"
                 st.session_state[final_key] = card_code
