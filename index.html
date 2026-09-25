@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Texas Hold'em Analyzer</title>
+    <!-- stlite用のスタイルシート -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.55.0/build/stlite.css"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- stliteのコアスクリプト -->
+    <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.55.0/build/stlite.js"></script>
+    <script>
+      stlite.mount(
+        {
+          // アプリを動かすために必要なライブラリ（ブラウザ上で自動ダウンロードされます）
+          requirements: ["pandas", "plotly", "treys"],
+          // メインとなるPythonファイル
+          entrypoint: "app.py",
+          // ブラウザの仮想環境に読み込ませるファイル群
+          files: {
+            "app.py": { url: "./app.py" },
+            "poker_calc.py": { url: "./poker_calc.py" },
+            "preflop_table.json": { url: "./preflop_table.json" },
+            ".streamlit/config.toml": { url: "./.streamlit/config.toml" }
+          },
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
