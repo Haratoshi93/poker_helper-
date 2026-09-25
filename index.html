@@ -19,7 +19,7 @@
       stlite.mount(
         {
           // アプリを動かすために必要なライブラリ（ブラウザ上で自動ダウンロードされます）
-          requirements: ["pandas", "plotly", "treys"],
+          requirements: ["pandas", "plotly"],
           // メインとなるPythonファイル
           entrypoint: "app.py",
           // ブラウザの仮想環境に読み込ませるファイル群
@@ -27,7 +27,12 @@
             "app.py": { url: "./app.py" },
             "poker_calc.py": { url: "./poker_calc.py" },
             "preflop_table.json": { url: "./preflop_table.json" },
-            ".streamlit/config.toml": { url: "./.streamlit/config.toml" }
+            ".streamlit/config.toml": { url: "./.streamlit/config.toml" },
+            "treys/__init__.py": { url: "./treys/__init__.py" },
+            "treys/card.py": { url: "./treys/card.py" },
+            "treys/deck.py": { url: "./treys/deck.py" },
+            "treys/evaluator.py": { url: "./treys/evaluator.py" },
+            "treys/lookup.py": { url: "./treys/lookup.py" }
           },
         },
         document.getElementById("root")

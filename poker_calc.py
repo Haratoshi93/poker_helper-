@@ -35,7 +35,11 @@ def calculate_equity(hero_cards_str, board_cards_str, num_villains=1, iterations
         # プリフロップなら事前計算データを優先使用する
         if len(hero_cards_str) == 2 and not board_cards_str:
             if PREFLOP_TABLE is None:
-                table_path = os.path.join(os.path.dirname(__file__), "preflop_table.json")
+                # ブラウザ（stlite）環境ではカレントディレクトリ、それ以外はスクリプトディレクトリ
+                table_path = "preflop_table.json"
+                if not os.path.exists(table_path):
+                    table_path = os.path.join(os.path.dirname(__file__), "preflop_table.json")
+                
                 if os.path.exists(table_path):
                     with open(table_path, "r") as f:
                         PREFLOP_TABLE = json.load(f)
