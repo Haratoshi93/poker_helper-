@@ -1,7 +1,4 @@
 import streamlit as st
-st.title("Streamlit Cloud Test")
-st.write("もしこの文字が見えたら、環境は正常で、プログラムの下の方に原因があります。")
-st.stop()
 import pandas as pd
 import plotly.express as px
 from poker_calc import calculate_equity, get_hand_type
@@ -9,88 +6,88 @@ from poker_calc import calculate_equity, get_hand_type
 st.set_page_config(page_title="Texas Hold'em Analyzer", layout="centered", initial_sidebar_state="collapsed")
 
 # ゴージャスかつスマホ（モバイル）に最適化されたカスタムCSS
-# st.markdown("""
-# <style>
-#     /* Streamlit Cloud特有のロゴ、ヘッダー、フッターを完全に非表示 */
-#     header[data-testid="stHeader"] {display: none !important;}
-#     footer {visibility: hidden !important;}
-#     .stApp > header {display: none !important;}
-#     [data-testid="stHeader"] {display: none !important;}
-#     [data-testid="stToolbar"] {display: none !important;}
-#     div[data-testid="viewerBadge"] {display: none !important;}
-#     .viewerBadge_container__1QSob {display: none !important;}
-#     a[href*="streamlit"] {display: none !important;}
-#     #MainMenu {visibility: hidden !important;}
-#     
-#     /* 全体の余白を極限まで詰めてスマホの画面を広く使う */
-#     .block-container {
-#         padding-top: 1rem !important;
-#         padding-bottom: 1rem !important;
-#         padding-left: 0.8rem !important;
-#         padding-right: 0.8rem !important;
-#     }
-#     /* 勝率などの数値をスマホでも1行に収まるスタイリッシュなサイズに */
-#     [data-testid="stMetricValue"] { 
-#         font-size: 2.8rem !important; 
-#         color: #d4af37 !important; 
-#         font-weight: bold;
-#     }
-#     [data-testid="stMetricLabel"] {
-#         color: #a0a0a0 !important;
-#         font-weight: bold;
-#         letter-spacing: 1px;
-#         font-size: 1.0rem !important;
-#     }
-#     /* 見出しのデザインとフォントサイズのスマホ最適化 */
-#     h1 { font-size: 1.8rem !important; }
-#     h2 { font-size: 1.5rem !important; }
-#     h3 { font-size: 1.2rem !important; letter-spacing: 1px; }
-#     h4 { font-size: 1.0rem !important; }
-#     h1, h2, h3, h4 { 
-#         color: #d4af37 !important; 
-#         font-family: 'Georgia', serif;
-#         border-bottom: 1px solid #333;
-#         padding-bottom: 5px;
-#         margin-bottom: 10px;
-#     }
-#     
-#     /* 自作ボタンピッカー（st.button）のフォントをさらに大きく */
-#     button[data-testid="baseButton-secondary"],
-#     button[data-testid="baseButton-primary"] {
-#         min-height: 3.5rem !important;
-#     }
-#     button[data-testid="baseButton-secondary"] p,
-#     button[data-testid="baseButton-primary"] p {
-#         font-size: 1.6rem !important;
-#         font-weight: bold !important;
-#     }
-#     
-#     /* カード画像を中央寄せにする */
-#     [data-testid="stImage"] {
-#         display: flex;
-#         justify-content: center;
-#     }
-#     [data-testid="stImage"] img {
-#         margin: 0 auto;
-#     }
-#     
-#     /* 数字選択のピル（st.pills）のスタイルを復元・調整 */
-#     [data-testid="stPill"] {
-#         padding: 0.5rem 0.8rem !important;
-#     }
-#     [data-testid="stPill"] span {
-#         font-size: 1.3rem !important;
-#         font-weight: bold !important;
-#     }
-#     
-#     /* 区切り線をさりげなく */
-#     hr {
-#         border-color: #333 !important;
-#         margin-top: 0.5rem !important;
-#         margin-bottom: 0.5rem !important;
-#     }
-# </style>
-# """, unsafe_allow_html=True)
+st.markdown("""
+<style>
+    /* Streamlit Cloud特有のロゴ、ヘッダー、フッターを完全に非表示 */
+    header[data-testid="stHeader"] {display: none !important;}
+    footer {visibility: hidden !important;}
+    .stApp > header {display: none !important;}
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    div[data-testid="viewerBadge"] {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;}
+    a[href*="streamlit"] {display: none !important;}
+    #MainMenu {visibility: hidden !important;}
+    
+    /* 全体の余白を極限まで詰めてスマホの画面を広く使う */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+    }
+    /* 勝率などの数値をスマホでも1行に収まるスタイリッシュなサイズに */
+    [data-testid="stMetricValue"] { 
+        font-size: 2.8rem !important; 
+        color: #d4af37 !important; 
+        font-weight: bold;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #a0a0a0 !important;
+        font-weight: bold;
+        letter-spacing: 1px;
+        font-size: 1.0rem !important;
+    }
+    /* 見出しのデザインとフォントサイズのスマホ最適化 */
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.2rem !important; letter-spacing: 1px; }
+    h4 { font-size: 1.0rem !important; }
+    h1, h2, h3, h4 { 
+        color: #d4af37 !important; 
+        font-family: 'Georgia', serif;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+    
+    /* 自作ボタンピッカー（st.button）のフォントをさらに大きく */
+    button[data-testid="baseButton-secondary"],
+    button[data-testid="baseButton-primary"] {
+        min-height: 3.5rem !important;
+    }
+    button[data-testid="baseButton-secondary"] p,
+    button[data-testid="baseButton-primary"] p {
+        font-size: 1.6rem !important;
+        font-weight: bold !important;
+    }
+    
+    /* カード画像を中央寄せにする */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+    [data-testid="stImage"] img {
+        margin: 0 auto;
+    }
+    
+    /* 数字選択のピル（st.pills）のスタイルを復元・調整 */
+    [data-testid="stPill"] {
+        padding: 0.5rem 0.8rem !important;
+    }
+    [data-testid="stPill"] span {
+        font-size: 1.3rem !important;
+        font-weight: bold !important;
+    }
+    
+    /* 区切り線をさりげなく */
+    hr {
+        border-color: #333 !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 st.title("Texas Hold'em Analyzer")
 
