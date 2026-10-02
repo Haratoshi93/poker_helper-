@@ -1,4 +1,7 @@
 import streamlit as st
+st.title("Streamlit Cloud Test")
+st.write("もしこの文字が見えたら、環境は正常で、プログラムの下の方に原因があります。")
+st.stop()
 import pandas as pd
 import plotly.express as px
 from poker_calc import calculate_equity, get_hand_type
