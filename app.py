@@ -195,21 +195,23 @@ if len(hero_cards) == 2:
     
     with st.spinner('Calculating Equity...'):
         win_rate, tie_rate = calculate_equity(hero_cards, [], num_villains, iterations=2000)
+    # エクイティ = 勝率 + タイ率÷2（引き分けの場合は賞金を折半するため）
+    equity = win_rate + tie_rate / 2
 
-    def get_preflop_advice(win_rate, num_villains):
+    def get_preflop_advice(equity, num_villains):
         fair_share = 1.0 / (num_villains + 1)
-        if win_rate >= fair_share * 1.5:
+        if equity >= fair_share * 1.5:
             return "success", "Rank S : 非常に有利 (トップクラス)"
-        elif win_rate >= fair_share * 1.1:
+        elif equity >= fair_share * 1.1:
             return "info", "Rank A : 有利 (平均以上の強さ)"
-        elif win_rate >= fair_share * 0.8:
+        elif equity >= fair_share * 0.8:
             return "warning", "Rank B : 注意 (平均以下の強さ)"
         else:
             return "error", "Rank C : 厳しい (勝つのは困難)"
 
     with st.container(border=True):
         st.markdown("**Hand Potential (手札のポテンシャル)**")
-        msg_type, msg_text = get_preflop_advice(win_rate, num_villains)
+        msg_type, msg_text = get_preflop_advice(equity, num_villains)
         if msg_type == "success": st.success(msg_text)
         elif msg_type == "info": st.info(msg_text)
         elif msg_type == "warning": st.warning(msg_text)
@@ -226,7 +228,7 @@ if len(hero_cards) == 2:
         """
         st.markdown(html_code, unsafe_allow_html=True)
         
-        st.metric("WIN % (勝率)", f"{win_rate*100:.1f}%")
+        st.metric("EQUITY (勝率)", f"{equity*100:.1f}%")
 
     st.button("RESET CARDS", on_click=reset_cards, use_container_width=True, type="primary")
 
@@ -263,23 +265,25 @@ if len(hero_cards) == 2:
             st.markdown("#### Postflop Analysis Result")
             with st.spinner('Simulating...'):
                 wr_board, tr_board = calculate_equity(hero_cards, board_cards, num_villains, iterations=1000)
+            eq_board = wr_board + tr_board / 2
             
             with st.container(border=True):
                 hand_type = get_hand_type(hero_cards, board_cards)
                 st.markdown(f"**Current Made Hand:** {hand_type}")
-                st.metric("WIN % (勝率)", f"{wr_board*100:.1f}%")
+                st.metric("EQUITY (勝率)", f"{eq_board*100:.1f}%")
                 
             st.markdown("#### Equity Chart")
             phases = ["Preflop", "Flop", "Turn", "River"]
             equity_history = []
             
-            equity_history.append({"Phase": phases[0], "Equity": win_rate * 100})
+            equity_history.append({"Phase": phases[0], "Equity": equity * 100})
             
             for i in [3, 4, 5]:
                 if len(board_cards) >= i:
                     current_board = board_cards[:i]
-                    wr, _ = calculate_equity(hero_cards, current_board, num_villains, iterations=1000)
-                    equity_history.append({"Phase": phases[[3, 4, 5].index(i) + 1], "Equity": wr * 100})
+                    wr, tr = calculate_equity(hero_cards, current_board, num_villains, iterations=1000)
+                    eq = wr + tr / 2
+                    equity_history.append({"Phase": phases[[3, 4, 5].index(i) + 1], "Equity": eq * 100})
 
             if len(equity_history) > 1:
                 df = pd.DataFrame(equity_history)
