@@ -14,5 +14,5 @@ jobs:
       - name: Ping Streamlit App
         run: |
           echo "Pinging Streamlit App to keep it awake..."
-          curl -sL https://pokerteacher.streamlit.app/_stcore/health > /dev/null
+          curl -sL https://poker-teacher.streamlit.app/_stcore/health > /dev/null
           echo "Done!"
