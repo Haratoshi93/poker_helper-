@@ -1,18 +1,71 @@
 name: Keep Streamlit Awake
 
+# Streamlit Community Cloud puts apps to sleep after ~12 hours without visitors.
+# A plain curl ping does not count as a visit, and a git commit does not wake a sleeping app.
+# So this workflow opens the app in a real (headless) browser and clicks the wake-up button if shown.
+
 on:
   schedule:
-    # 毎日 午前9時 (UTCの0時) と 午後9時 (UTCの12時) に実行して確実にスリープを防ぐ
-    - cron: '0 0,12 * * *'
-  workflow_dispatch: # 手動実行用
+    # Every 6 hours (UTC). Shorter than the 12-hour sleep threshold.
+    - cron: '0 */6 * * *'
+    # Once a month: small commit so GitHub does not disable this schedule after 60 days of no activity.
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
 
 jobs:
-  ping-app:
+  wake-app:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
     steps:
-      - name: Ping Streamlit App
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
         run: |
-          echo "Pinging Streamlit App to keep it awake..."
-          curl -sL -b /tmp/cookies.txt -c /tmp/cookies.txt https://poker-teacher.streamlit.app/_stcore/health > /dev/null || true
-          echo "Done!"
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Visit app and wake it up if sleeping
+        env:
+          APP_URL: https://poker-teacher.streamlit.app/
+        run: |
+          cat > wake.py << 'EOF'
+          import os
+          from playwright.sync_api import sync_playwright
+
+          url = os.environ["APP_URL"]
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              print(f"Opening {url}...")
+              page.goto(url, timeout=60000)
+              page.wait_for_timeout(8000)
+              button = page.get_by_role("button", name="Yes, get this app back up!")
+              if button.count() > 0:
+                  print("App was sleeping. Clicking wake-up button...")
+                  button.first.click()
+                  page.wait_for_timeout(60000)
+                  print("Wake-up button clicked.")
+              else:
+                  print("App is awake.")
+              browser.close()
+          EOF
+          python wake.py
+
+  monthly-keepalive-commit:
+    if: github.event.schedule == '0 3 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit timestamp
+        run: |
+          echo "Last run: $(date -u)" > .github/keepalive.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive.txt
+          git commit -m "chore: monthly keep-alive" || exit 0
+          git push
